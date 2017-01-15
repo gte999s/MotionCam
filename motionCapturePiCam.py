@@ -99,8 +99,8 @@ while 1 == 1:
     cv2.putText(procFrame,frameText,(10,20), font, 0.5, (255,255,255),1,cv2.LINE_AA)
 
     if isMotion:
-        cv2.imwrite('./motionCaptureImages/HighRes_%d_%s.jpg' % frameCount, frame, datestr)
-        cv2.imwrite('./motionCaptureImages/LowRes_%d_%s.jpg' % frameCount, procFrame, datestr)
+        cv2.imwrite('./motionCaptureImages/HighRes_%d_%s.jpg' % (frameCount, datestr), frame)
+        cv2.imwrite('./motionCaptureImages/LowRes_%d_%s.jpg' % (frameCount, datestr), procFrame)
 
     # Display to screen
     cv2.imshow("Frame", procFrame)
