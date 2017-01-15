@@ -5,16 +5,17 @@ Created on Sat Jan  7 18:40:09 2017
 @author: pi
 """
 import sys
-
-sys.path.append('/usr/local/lib/python2.7/site-packages')
-import cv2
-
-## Create Class for handling Pi Camera Frame Capture
+import os
+import shutil
+# Create Class for handling Pi Camera Frame Capture
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 from threading import Thread
 import time
+import simpleMotionDetector
 
+sys.path.append('/usr/local/lib/python2.7/site-packages')
+import cv2
 
 class PiVideoStream:
     def __init__(self, resolution=(320, 240), framerate=32):
@@ -60,34 +61,43 @@ class PiVideoStream:
         # indicate that the thread should be stopped
         self.stopped = True
 
+# cleanup motion capture dir
+print("[INFO] cleaning up image folder")
+shutil.rmtree('./motionCaptureImages', ignore_errors=True)
+os.makedirs('./motionCaptureImages')
+
+# create detector
+print("[INFO] creating simple detector object")
+detector = simpleMotionDetector.SimpleMotionDetector(debug=False, thresh_diff=10, avg_ratio=.5)
+
 # created a *threaded *video stream, allow the camera sensor to warmup,
 # and start the FPS counter
 print("[INFO] sampling THREADED frames from `picamera` module...")
-vs = PiVideoStream(resolution=(1920, 1080), framerate=15)
+vs = PiVideoStream(resolution=(1920, 1080), framerate=30)
 vs.start()
 time.sleep(2.0)
 frameCount = 0
 
-# loop over some frames...this time using the threaded stream
+# grab frames from threaded cam process
 while 1 == 1:
-    frameCount=frameCount + 1
+    frameCount += 1
+
     # grab the frame from the threaded video stream and resize it
-    # to have a maximum width of 400 pixels
     frame = vs.read()
     frameSmall = cv2.resize(frame, None, fx=.3, fy=.3)
 
-    #Create some text for the screen
+    # run motion detection
+    (isMotion, procFrame) = detector.procFrame(frameSmall)
+
+    # Create some text for the screen
     frameText = "Frame Count: %d" % frameCount
-    cv2.putText(frameSmall, frameText.format(frameText), (10, 20),
+    cv2.putText(procFrame, frameText.format(frameText), (10, 20),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
     # Display to screen
-    cv2.imshow("Frame", frameSmall)
-    key = cv2.waitKey(1) & 0xFF
-
-    if key == ord("q"):
+    cv2.imshow("Frame", procFrame)
+    if cv2.waitKey(1) == ord('q'):
         break
-
 
 # do a bit of cleanup
 cv2.destroyAllWindows()

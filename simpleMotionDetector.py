@@ -1,9 +1,10 @@
 import sys
-
 sys.path.append('/usr/local/lib/python2.7/site-packages')
 import cv2
+import numpy
 
-class simpleMotionDetector
+class SimpleMotionDetector:
+
     def __init__(self,thresh_diff=10,min_contour_size=1000,avg_ratio=0.7, blur=(13, 13), debug=False):
         self.thresh_diff=thresh_diff
         self.min_contour_size=min_contour_size
@@ -12,7 +13,7 @@ class simpleMotionDetector
         self.blur = blur
         self.debug = debug
 
-    def get_foreground(self, frame):
+    def procFrame(self, frame):
         # Convert to Greyscale
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -20,7 +21,7 @@ class simpleMotionDetector
         gray = cv2.GaussianBlur(gray, (13, 13), 0)
 
         # Init running average if not done already
-        if self.frame_avg is None
+        if self.frame_avg is None:
             self.frame_avg = gray.copy().astype('float')
 
         # accumulate the weighted average between the current frame and
@@ -32,7 +33,7 @@ class simpleMotionDetector
         # threshold the delta image
         # Erode the image to get rid of specs
         # dilate the thresholded image to fill in holes
-        thresh = cv2.threshold(frameDelta, 10, 255, cv2.THRESH_BINARY)[1]
+        thresh = cv2.threshold(frameDelta, self.thresh_diff, 255, cv2.THRESH_BINARY)[1]
         kernel = numpy.ones((5, 5), numpy.uint8)
         thresh = cv2.erode(thresh, kernel=kernel)
         thresh = cv2.dilate(thresh, None, iterations=10)
@@ -58,8 +59,5 @@ class simpleMotionDetector
             cv2.imshow("gray",gray)
             cv2.imshow("Frame Delta",frameDelta)
             cv2.imshow("Threshold",thresh)
-            cv2.waitKey(1)
-
-
 
         return isMotion, frame

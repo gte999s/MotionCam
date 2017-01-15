@@ -4,110 +4,93 @@ Created on Sat Jan  7 18:40:09 2017
 
 @author: pi
 """
-from picamera import PiCamera
-from picamera.array import PiRGBArray
-import argparse
-import warnings
-import datetime
-
-import json
-import time
-
-import argparse
-import datetime
-
-import time
-
-import sys
 
 sys.path.append('/usr/local/lib/python2.7/site-packages')
-
 import cv2
-import imutils
 
-# initialize the camera and grab a reference to the raw camera capture
-camera = PiCamera()
-camera.resolution = (1920, 1088)
-camera.framerate = 2
-camera.led = False
-rawCapture = PiRGBArray(camera, size=(1920, 1088))
+## Create Class for handling Pi Camera Frame Capture
+from picamera.array import PiRGBArray
+from picamera import PiCamera
+from threading import Thread
+import cv2
+from imutils import FPS
 
-# allow the camera to warmup, then initialize the average frame, last
-# uploaded timestamp, and frame motion counter
-print "[INFO] warming up..."
-time.sleep(2)
-avg = None
-lastUploaded = datetime.datetime.now()
-motionCounter = 0
 
-# capture frames from the camera
-for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
-    # grab the raw NumPy array representing the image and initialize
-    # the timestamp and occupied/unoccupied text
-    frame = f.array
-    timestamp = datetime.datetime.now()
-    print timestamp
-    text = "Unoccupied"
+class PiVideoStream:
+    def __init__(self, resolution=(320, 240), framerate=32):
+        # initialize the camera and stream
+        self.camera = PiCamera()
+        self.camera.resolution = resolution
+        self.camera.framerate = framerate
+        self.rawCapture = PiRGBArray(self.camera, size=resolution)
+        self.stream = self.camera.capture_continuous(self.rawCapture,
+                                                     format="bgr", use_video_port=True)
 
-    # resize the frame, convert it to grayscale, and blur it
-    # frame = imutils.resize(frame, width=500)
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    gray = cv2.GaussianBlur(gray, (21, 21), 0)
+        # initialize the frame and the variable used to indicate
+        # if the thread should be stopped
+        self.frame = None
+        self.stopped = False
 
-    # if the average frame is None, initialize it
-    if avg is None:
-        print "[INFO] starting background model..."
-        avg = gray.copy()
-        rawCapture.truncate(0)
-        continue
+    def start(self):
+        # start the thread to read frames from the video stream
+        Thread(target=self.update, args=()).start()
+        return self
 
-    # accumulate the weighted average between the current frame and
-    # previous frames, then compute the difference between the current
-    # frame and running average
-    cv2.accumulateWeighted(gray, avg, 0.5)
-    frameDelta = cv2.absdiff(gray, cv2.convertScaleAbs(avg))
+    def update(self):
+        # keep looping infinitely until the thread is stopped
+        for f in self.stream:
+            # grab the frame from the stream and clear the stream in
+            # preparation for the next frame
+            self.frame = f.array
+            self.rawCapture.truncate(0)
 
-    # threshold the delta image, dilate the thresholded image to fill
-    # in holes, then find contours on thresholded image
-    thresh = cv2.threshold(frameDelta, 5, 255,
-                           cv2.THRESH_BINARY)[1]
-    thresh = cv2.dilate(thresh, None, iterations=2)
-    (_, cnts, _) = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
-                                    cv2.CHAIN_APPROX_SIMPLE)
+            # if the thread indicator variable is set, stop the thread
+            # and resource camera resources
+            if self.stopped:
+                self.stream.close()
+                self.rawCapture.close()
+                self.camera.close()
+                return
 
-    # loop over the contours
-    for c in cnts:
-        # if the contour is too small, ignore it
-        if cv2.contourArea(c) < 10000:
-            continue
+    def read(self):
+        # return the frame most recently read
+        return self.frame
 
-        # compute the bounding box for the contour, draw it on the frame,
-        # and update the text
-        (x, y, w, h) = cv2.boundingRect(c)
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        text = "Occupied"
+    def stop(self):
+        # indicate that the thread should be stopped
+        self.stopped = True
 
-    # draw the text and timestamp on the frame
-    ts = timestamp.strftime("%A %d %B %Y %I:%M:%S%p")
-    cv2.putText(frame, "Room Status: {}".format(text), (10, 20),
+# created a *threaded *video stream, allow the camera sensor to warmup,
+# and start the FPS counter
+print("[INFO] sampling THREADED frames from `picamera` module...")
+vs = PiVideoStream(resolution=(2592,1944),framerate=10)
+vs.start()
+time.sleep(2.0)
+fps = FPS().start()
+
+# loop over some frames...this time using the threaded stream
+while 1 == 1:
+    # grab the frame from the threaded video stream and resize it
+    # to have a maximum width of 400 pixels
+    frame = vs.read()
+    frameSmall = cv2.resize(frame, None, fx=.2, fy=.2)
+
+    # update the FPS counter
+    fps.update()
+
+    #Create some text for the screen
+    frameText = "FPS: %d" % fps.fps()
+    cv2.putText(frameSmall, frameText.format(frameText), (10, 20),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-    cv2.putText(frame, ts, (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX,
-                0.35, (0, 0, 255), 1)
 
-    if 1 == 1:
-        # display the security feed
-        cv2.imshow("Security Feed", frame)
-        key = cv2.waitKey(1) & 0xFF
+    # Display to screen
+    cv2.imshow("Frame", frameSmall)
+    key = cv2.waitKey(1) & 0xFF
 
-        # if the `q` key is pressed, break from the lop
-        if key == ord("q"):
-            break
+# stop the timer and display FPS information
+fps.stop()
 
-    if text == "Occupied":
-        cv2.imwrite("frame" + str(timestamp) + ".jpg", frame)
-    # clear the stream in preparation for the next frame
-    rawCapture.truncate(0)
 
-# cleanup the camera and close any open windows
-camera.close()
+# do a bit of cleanup
 cv2.destroyAllWindows()
+vs.stop()
