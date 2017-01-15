@@ -84,7 +84,7 @@ while 1 == 1:
     # Display to screen
     cv2.imshow("Frame", frameSmall)
     key = cv2.waitKey(1) & 0xFF
-				
+
     if key == ord("q"):
         break
 
