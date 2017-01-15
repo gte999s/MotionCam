@@ -4,6 +4,7 @@ Created on Sat Jan  7 18:40:09 2017
 
 @author: pi
 """
+import sys
 
 sys.path.append('/usr/local/lib/python2.7/site-packages')
 import cv2
@@ -12,8 +13,7 @@ import cv2
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 from threading import Thread
-import cv2
-from imutils import FPS
+import time
 
 
 class PiVideoStream:
@@ -66,29 +66,27 @@ print("[INFO] sampling THREADED frames from `picamera` module...")
 vs = PiVideoStream(resolution=(2592,1944),framerate=10)
 vs.start()
 time.sleep(2.0)
-fps = FPS().start()
+frameCount = 0
 
 # loop over some frames...this time using the threaded stream
 while 1 == 1:
+    frameCount=frameCount + 1
     # grab the frame from the threaded video stream and resize it
     # to have a maximum width of 400 pixels
     frame = vs.read()
     frameSmall = cv2.resize(frame, None, fx=.2, fy=.2)
 
-    # update the FPS counter
-    fps.update()
-
     #Create some text for the screen
-    frameText = "FPS: %d" % fps.fps()
+    frameText = "Frame Count: %d" % frameCount
     cv2.putText(frameSmall, frameText.format(frameText), (10, 20),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
     # Display to screen
     cv2.imshow("Frame", frameSmall)
     key = cv2.waitKey(1) & 0xFF
-
-# stop the timer and display FPS information
-fps.stop()
+				
+    if key == ord("q"):
+        break
 
 
 # do a bit of cleanup
