@@ -63,7 +63,7 @@ class PiVideoStream:
 # created a *threaded *video stream, allow the camera sensor to warmup,
 # and start the FPS counter
 print("[INFO] sampling THREADED frames from `picamera` module...")
-vs = PiVideoStream(resolution=(2592,1944),framerate=10)
+vs = PiVideoStream(resolution=(1920, 1080), framerate=15)
 vs.start()
 time.sleep(2.0)
 frameCount = 0
@@ -74,7 +74,7 @@ while 1 == 1:
     # grab the frame from the threaded video stream and resize it
     # to have a maximum width of 400 pixels
     frame = vs.read()
-    frameSmall = cv2.resize(frame, None, fx=.2, fy=.2)
+    frameSmall = cv2.resize(frame, None, fx=.3, fy=.3)
 
     #Create some text for the screen
     frameText = "Frame Count: %d" % frameCount
