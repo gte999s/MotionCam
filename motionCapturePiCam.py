@@ -13,6 +13,7 @@ from picamera import PiCamera
 from threading import Thread
 import time
 import simpleMotionDetector
+import datetime
 
 sys.path.append('/usr/local/lib/python2.7/site-packages')
 import cv2
@@ -68,7 +69,7 @@ os.makedirs('./motionCaptureImages')
 
 # create detector
 print("[INFO] creating simple detector object")
-detector = simpleMotionDetector.SimpleMotionDetector(debug=False, thresh_diff=10, avg_ratio=.5)
+detector = simpleMotionDetector.SimpleMotionDetector(debug=False, thresh_diff=10, avg_ratio=.3, min_contour_size=500)
 
 # created a *threaded *video stream, allow the camera sensor to warmup,
 # and start the FPS counter
@@ -77,6 +78,7 @@ vs = PiVideoStream(resolution=(1920, 1080), framerate=30)
 vs.start()
 time.sleep(2.0)
 frameCount = 0
+startTime=time.time()
 
 # grab frames from threaded cam process
 while 1 == 1:
@@ -90,9 +92,15 @@ while 1 == 1:
     (isMotion, procFrame) = detector.procFrame(frameSmall)
 
     # Create some text for the screen
-    frameText = "Frame Count: %d" % frameCount
-    cv2.putText(procFrame, frameText.format(frameText), (10, 20),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+    fps = frameCount / (time.time() - startTime)
+    datestr = datetime.datetime.now().strftime('%Y_%m_%d_%H%M%S')
+    frameText = "Frame Count: % 6d FPS: %2.1f       %s" % ( frameCount, fps, datestr)
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    cv2.putText(procFrame,frameText,(10,20), font, 0.5, (255,255,255),1,cv2.LINE_AA)
+
+    if isMotion:
+        cv2.imwrite('./motionCaptureImages/HighRes_%d_%s.jpg' % frameCount, frame, datestr)
+        cv2.imwrite('./motionCaptureImages/LowRes_%d_%s.jpg' % frameCount, procFrame, datestr)
 
     # Display to screen
     cv2.imshow("Frame", procFrame)
