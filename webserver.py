@@ -3,7 +3,7 @@ import SocketServer
 import os
 
 PORT = 8000
-rootPath = "/Users/nikol/Documents/GitHub/MotionCam/MotionCam/motionCaptureImages/"
+rootPath = "./motionCaptureImages/"
 
 os.chdir(rootPath)
 
