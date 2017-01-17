@@ -3,7 +3,7 @@ import SocketServer
 import os
 
 PORT = 8000
-rootPath = "./motionCaptureImages/"
+rootPath = "/home/pi/github/MotionCam/."
 
 os.chdir(rootPath)
 
