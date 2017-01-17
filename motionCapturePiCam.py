@@ -63,9 +63,9 @@ class PiVideoStream:
         self.stopped = True
 
 # cleanup motion capture dir
-print("[INFO] cleaning up image folder")
-shutil.rmtree('./motionCaptureImages', ignore_errors=True)
-os.makedirs('./motionCaptureImages')
+#print("[INFO] cleaning up image folder")
+#shutil.rmtree('./motionCaptureImages', ignore_errors=True)
+#os.makedirs('./motionCaptureImages')
 
 # create detector
 print("[INFO] creating simple detector object")
@@ -79,28 +79,43 @@ vs.start()
 time.sleep(2.0)
 frameCount = 0
 startTime=time.time()
+captureFrameCount=0;
 
 # grab frames from threaded cam process
 while 1 == 1:
     frameCount += 1
 
+    # get timestamp
+    datestr = datetime.datetime.now().strftime('%Y_%m_%d_%H%M%S')
+    dateOnlyStr = datetime.datetime.now().strftime('%Y_%m_%d')
+
     # grab the frame from the threaded video stream and resize it
     frame = vs.read()
     frameSmall = cv2.resize(frame, None, fx=.3, fy=.3)
+
 
     # run motion detection
     (isMotion, procFrame) = detector.procFrame(frameSmall)
 
     # Create some text for the screen
     fps = frameCount / (time.time() - startTime)
-    datestr = datetime.datetime.now().strftime('%Y_%m_%d_%H%M%S')
     frameText = "Frame Count: % 6d FPS: %2.1f       %s" % ( frameCount, fps, datestr)
     font = cv2.FONT_HERSHEY_SIMPLEX
     cv2.putText(procFrame,frameText,(10,20), font, 0.5, (255,255,255),1,cv2.LINE_AA)
 
     if isMotion:
-        cv2.imwrite('./motionCaptureImages/HighRes_%d_%s.jpg' % (frameCount, datestr), frame)
-        cv2.imwrite('./motionCaptureImages/LowRes_%d_%s.jpg' % (frameCount, datestr), procFrame)
+        captureFrameCount += 1
+        folderName = './motionCaptureImages/' + dateOnlyStr + '/'
+
+        # do folder maintenance
+        if not os.path.isdir(folderName):
+            os.makedirs(folderName)
+
+        # Finally make some JPEGs
+        cv2.imwrite(folderName + 'I_%s_%d_HighRes.jpg' % (datestr, captureFrameCount), frame,
+                    [cv2.IMWRITE_JPEG_QUALITY, 100])
+        cv2.imwrite(folderName + 'I_%s_%d_LowRes.jpg' % (datestr, captureFrameCount), procFrame,
+                    [cv2.IMWRITE_JPEG_QUALITY, 100])
 
     # Display to screen
     cv2.imshow("Frame", procFrame)
