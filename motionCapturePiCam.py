@@ -104,12 +104,17 @@ while 1 == 1:
     cv2.putText(procFrame,frameText,(10,20), font, 0.5, (255,255,255),1,cv2.LINE_AA)
 
     if isMotion or captureFrameCount == 0:
-        captureFrameCount += 1
         folderName = './motionCaptureImages/' + dateOnlyStr + '/'
 
         # do folder maintenance
         if not os.path.isdir(folderName):
+            # Reset Captured Frame Count each day
+            captureFrameCount = 0
+            # make folder for the current day
             os.makedirs(folderName)
+
+        # Increment number of captured images for this day
+        captureFrameCount += 1        
 
         # Finally make some JPEGs
         cv2.imwrite(folderName + 'I_%s_%d_HighRes.jpg' % (datestr, captureFrameCount), frame,
