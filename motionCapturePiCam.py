@@ -7,6 +7,8 @@ Created on Sat Jan  7 18:40:09 2017
 import sys
 import os
 import shutil
+# Import astral so we can get sunset/sunrise times
+from astral import Astral
 # Create Class for handling Pi Camera Frame Capture
 from picamera.array import PiRGBArray
 from picamera import PiCamera
@@ -67,6 +69,11 @@ class PiVideoStream:
 #shutil.rmtree('./motionCaptureImages', ignore_errors=True)
 #os.makedirs('./motionCaptureImages')
 
+# Create sunrise/sunset dictionary for city
+astral = Astral()
+astral.solar_depression='civil'
+city = astral['raleigh']
+
 # create detector
 print("[INFO] creating simple detector object")
 detector = simpleMotionDetector.SimpleMotionDetector(debug=False, thresh_diff=10, avg_ratio=.3, min_contour_size=500)
@@ -74,9 +81,9 @@ detector = simpleMotionDetector.SimpleMotionDetector(debug=False, thresh_diff=10
 # created a *threaded *video stream, allow the camera sensor to warmup,
 # and start the FPS counter
 print("[INFO] sampling THREADED frames from `picamera` module...")
-vs = PiVideoStream(resolution=(1920, 1080), framerate=30)
+vs = PiVideoStream(resolution=(2592, 1944), framerate=15)
 vs.start()
-time.sleep(2.0)
+time.sleep(4.0)
 frameCount = 0
 startTime=time.time()
 captureFrameCount=0;
@@ -91,7 +98,8 @@ while 1 == 1:
 
     # grab the frame from the threaded video stream and resize it
     frame = vs.read()
-    frameSmall = cv2.resize(frame, None, fx=.3, fy=.3)
+    frameSmall = cv2.resize(frame, None, fx=.22, fy=.22)
+    frameSmall = frameSmall[100:,]
 
 
     # run motion detection
@@ -104,23 +112,28 @@ while 1 == 1:
     cv2.putText(procFrame,frameText,(10,20), font, 0.5, (255,255,255),1,cv2.LINE_AA)
 
     if isMotion or captureFrameCount == 0:
-        folderName = './motionCaptureImages/' + dateOnlyStr + '/'
-
-        # do folder maintenance
-        if not os.path.isdir(folderName):
-            # Reset Captured Frame Count each day
-            captureFrameCount = 0
-            # make folder for the current day
-            os.makedirs(folderName)
-
-        # Increment number of captured images for this day
-        captureFrameCount += 1        
-
-        # Finally make some JPEGs
-        cv2.imwrite(folderName + 'I_%s_%d_HighRes.jpg' % (datestr, captureFrameCount), frame,
-                    [cv2.IMWRITE_JPEG_QUALITY, 100])
-        cv2.imwrite(folderName + 'I_%s_%d_LowRes.jpg' % (datestr, captureFrameCount), procFrame,
-                    [cv2.IMWRITE_JPEG_QUALITY, 100])
+        sun=city.sun(date=datetime.datetime.now(),local=True)
+        tzinfo = sun['dusk'].tzinfo
+        
+        if sun['dawn'] < datetime.datetime.now(tzinfo) < sun['dusk']:        
+        
+            folderName = './images/' + dateOnlyStr + '/'
+    
+            # do folder maintenance
+            if not os.path.isdir(folderName):
+                # Reset Captured Frame Count each day
+                captureFrameCount = 0
+                # make folder for the current day
+                os.makedirs(folderName)
+    
+            # Increment number of captured images for this day
+            captureFrameCount += 1        
+    
+            # Finally make some JPEGs
+            cv2.imwrite(folderName + 'I_%s_%d_HighRes.jpg' % (datestr, captureFrameCount), frame,
+                        [cv2.IMWRITE_JPEG_QUALITY, 100])
+            cv2.imwrite(folderName + 'I_%s_%d_LowRes.jpg' % (datestr, captureFrameCount), procFrame,
+                        [cv2.IMWRITE_JPEG_QUALITY, 100])
 
     # Display to screen
     cv2.imshow("Frame", procFrame)
