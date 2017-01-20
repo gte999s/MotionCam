@@ -6,7 +6,6 @@ Created on Sat Jan  7 18:40:09 2017
 """
 import sys
 import os
-import shutil
 # Import astral so we can get sunset/sunrise times
 from astral import Astral
 # Create Class for handling Pi Camera Frame Capture
@@ -19,6 +18,35 @@ import datetime
 
 sys.path.append('/usr/local/lib/python2.7/site-packages')
 import cv2
+
+def imageGallaryTask():
+    import time
+    import subprocess
+    
+    while 1==1:
+        time.sleep(60)
+        subprocess.check_call(['sigal','build'])
+    
+
+def webserverTask():
+    import SimpleHTTPServer
+    import SocketServer
+    import os
+    
+    PORT = 8000
+    rootPath = "/home/pi/github/MotionCam/."
+    
+    os.chdir(rootPath)
+    
+    Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
+    
+    httpd = SocketServer.TCPServer(("", PORT), Handler)
+    
+    print "serving folder: ", rootPath
+    print "serving at port", PORT
+    
+    httpd.serve_forever()
+
 
 class PiVideoStream:
     def __init__(self, resolution=(320, 240), framerate=32):
@@ -64,11 +92,6 @@ class PiVideoStream:
         # indicate that the thread should be stopped
         self.stopped = True
 
-# cleanup motion capture dir
-#print("[INFO] cleaning up image folder")
-#shutil.rmtree('./motionCaptureImages', ignore_errors=True)
-#os.makedirs('./motionCaptureImages')
-
 # Create sunrise/sunset dictionary for city
 astral = Astral()
 astral.solar_depression='civil'
@@ -84,10 +107,21 @@ print("[INFO] sampling THREADED frames from `picamera` module...")
 vs = PiVideoStream(resolution=(2592, 1944), framerate=15)
 vs.start()
 time.sleep(4.0)
+
+# Start webserver
+webThread=Thread(target=webserverTask,args=())
+webThread.daemon = True
+webThread.start()
+
+# Start Gallary Updater
+galleryThread=Thread(target=imageGallaryTask,args=())
+galleryThread.daemon=True
+galleryThread.start()
+
+# Start Main Loop
 frameCount = 0
 startTime=time.time()
 captureFrameCount=0;
-
 # grab frames from threaded cam process
 while 1 == 1:
     frameCount += 1
@@ -143,3 +177,5 @@ while 1 == 1:
 # do a bit of cleanup
 cv2.destroyAllWindows()
 vs.stop()
+
+
