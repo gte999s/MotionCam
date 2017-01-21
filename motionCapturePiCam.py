@@ -12,6 +12,7 @@ from astral import Astral
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 from threading import Thread
+import multiprocessing
 import time
 import simpleMotionDetector
 import datetime
@@ -91,6 +92,7 @@ class PiVideoStream:
     def stop(self):
         # indicate that the thread should be stopped
         self.stopped = True
+        print "stopping frame capture proccess"
 
 # Create sunrise/sunset dictionary for city
 astral = Astral()
@@ -109,12 +111,12 @@ vs.start()
 time.sleep(4.0)
 
 # Start webserver
-webThread=Thread(target=webserverTask,args=())
+webThread=multiprocessing.Process(target=webserverTask,args=())
 webThread.daemon = True
 webThread.start()
 
 # Start Gallary Updater
-galleryThread=Thread(target=imageGallaryTask,args=())
+galleryThread=multiprocessing.Process(target=imageGallaryTask,args=())
 galleryThread.daemon=True
 galleryThread.start()
 
