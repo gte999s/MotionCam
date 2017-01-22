@@ -152,6 +152,7 @@ while 1 == 1:
     if saveProcess is not None:
         if not saveProcess.is_alive():
             saveProcess = None
+            print "Save Process Complete"
         else:
             print "Save Process running"
 
@@ -177,9 +178,12 @@ while 1 == 1:
             frameStr = folderName + 'I_%s_%d_LowRes.jpg' % (datestr, captureFrameCount)
             frameHighResStr= frameHighResStr=folderName + 'I_%s_%d_HighRes.jpg' % (datestr, captureFrameCount)
 
-            saveProcess = multiprocessing.Process(imageWriter.writeNewImage,args=(frameStr,procFrame,frameHighResStr,frame))
+            saveProcess = multiprocessing.Process(target=imageWriter.writeNewImage,args=(100,
+                                                                                         procFrame,frameStr,
+                                                                                         frame,frameHighResStr))
             saveProcess.daemon = True
             saveProcess.start()
+            print "Save Process started"
 
 
     # Display to screen
