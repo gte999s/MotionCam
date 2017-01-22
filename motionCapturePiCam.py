@@ -104,10 +104,6 @@ city = astral['raleigh']
 print("[INFO] creating simple detector object")
 detector = simpleMotionDetector.SimpleMotionDetector(debug=False, thresh_diff=10, avg_ratio=.3, min_contour_size=500)
 
-# create image writer
-writer = imageWriter.imageWriter(quality=100)
-print("writer thread is active: %d" % writer.isRunning())
-
 # created a *threaded *video stream, allow the camera sensor to warmup,
 # and start the FPS counter
 print("[INFO] sampling THREADED frames from `picamera` module...")
@@ -120,12 +116,13 @@ webThread = multiprocessing.Process(target=webserverTask, args=())
 webThread.daemon = True
 webThread.start()
 
-# Start Gallary Updater
+# Start Gallery Updater
 galleryThread = multiprocessing.Process(target=imageGallaryTask, args=())
 galleryThread.daemon = True
 galleryThread.start()
 
 # Start Main Loop
+saveProcess = None
 frameCount = 0
 startTime = time.time()
 captureFrameCount = 0
@@ -151,10 +148,14 @@ while 1 == 1:
     frameText = "Frame Count: % 6d FPS: %2.1f       %s" % (captureFrameCount , fps, datestr)
     font = cv2.FONT_HERSHEY_SIMPLEX
     cv2.putText(procFrame, frameText, (10, 20), font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
-    
-      
-    
-    if (isMotion or captureFrameCount == 0) and writer.isRunning() is False:
+
+    if saveProcess is not None:
+        if not saveProcess.is_alive():
+            saveProcess = None
+        else:
+            print "Save Process running"
+
+    if (isMotion or captureFrameCount == 0) and saveProcess is None:
         sun = city.sun(date=datetime.datetime.now(), local=True)
         tzinfo = sun['dusk'].tzinfo
         
@@ -173,10 +174,14 @@ while 1 == 1:
             captureFrameCount += 1        
     
             # Finally make some JPEGs
-            writer.writeNewImage(frameStr=folderName + 'I_%s_%d_LowRes.jpg' % (datestr, captureFrameCount), frame=procFrame,
-                                 frameHighResStr=folderName + 'I_%s_%d_HighRes.jpg' % (datestr, captureFrameCount), frameHighRes=frame)
+            frameStr = folderName + 'I_%s_%d_LowRes.jpg' % (datestr, captureFrameCount)
+            frameHighResStr= frameHighResStr=folderName + 'I_%s_%d_HighRes.jpg' % (datestr, captureFrameCount)
 
-    print("Writer thread is active: %d" % writer.isRunning())          
+            saveProcess = multiprocessing.Process(imageWriter.writeNewImage,args=(frameStr,procFrame,frameHighResStr,frame))
+            saveProcess.daemon = True
+            saveProcess.start()
+
+
     # Display to screen
     cv2.imshow("Frame", procFrame)
     if cv2.waitKey(1) == ord('q'):
