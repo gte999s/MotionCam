@@ -26,13 +26,11 @@ class imageWriter:
         while True:
 
             if self.isRunning:
-                print "[INFO] writting new image to JPG %s", self.frameStr
+                print "[INFO] writing new image to JPG ", self.frameStr
                 cv2.imwrite(self.frameStr, self.frame,
                             [cv2.IMWRITE_JPEG_QUALITY, self.quality])
                 cv2.imwrite(self.frameHighResStr, self.frameHighRes,
                             [cv2.IMWRITE_JPEG_QUALITY, self.quality])
-                self.frame = None
-                self.frameHighRes = None
                 self.isRunning = False
 
             if self.stopped:
