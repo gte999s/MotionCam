@@ -122,7 +122,7 @@ galleryThread.daemon = True
 galleryThread.start()
 
 # Start Main Loop
-saveProcess = None
+saveThread = None
 frameCount = 0
 startTime = time.time()
 captureFrameCount = 0
@@ -149,14 +149,14 @@ while 1 == 1:
     font = cv2.FONT_HERSHEY_SIMPLEX
     cv2.putText(procFrame, frameText, (10, 20), font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
-    if saveProcess is not None:
-        if not saveProcess.is_alive():
-            saveProcess = None
+    if saveThread is not None:
+        if not saveThread.is_alive():
+            saveThread = None
             print "Save Process Complete"
         else:
             print "Save Process running"
 
-    if (isMotion or captureFrameCount == 0) and saveProcess is None:
+    if (isMotion or captureFrameCount == 0) and saveThread is None:
         sun = city.sun(date=datetime.datetime.now(), local=True)
         tzinfo = sun['dusk'].tzinfo
         
@@ -176,13 +176,13 @@ while 1 == 1:
     
             # Finally make some JPEGs
             frameStr = folderName + 'I_%s_%d_LowRes.jpg' % (datestr, captureFrameCount)
-            frameHighResStr= frameHighResStr=folderName + 'I_%s_%d_HighRes.jpg' % (datestr, captureFrameCount)
+            frameHighResStr = folderName + 'I_%s_%d_HighRes.jpg' % (datestr, captureFrameCount)
 
-            saveProcess = multiprocessing.Process(target=imageWriter.writeNewImage,args=(100,
-                                                                                         procFrame,frameStr,
-                                                                                         frame,frameHighResStr))
-            saveProcess.daemon = True
-            saveProcess.start()
+            saveThread = Thread(target=imageWriter.writeNewImage, args=(100,
+                                                                           procFrame,frameStr,
+                                                                           frame,frameHighResStr))
+            saveThread.daemon = True
+            saveThread.start()
             print "Save Process started"
 
 
