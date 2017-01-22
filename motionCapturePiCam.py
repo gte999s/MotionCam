@@ -156,7 +156,7 @@ while 1 == 1:
         else:
             print "Save Process running"
 
-    if (isMotion or captureFrameCount == 0) and saveThread is None:
+    if (isMotion or captureFrameCount <= 3) and saveThread is None:
         sun = city.sun(date=datetime.datetime.now(), local=True)
         tzinfo = sun['dusk'].tzinfo
         
@@ -178,7 +178,7 @@ while 1 == 1:
             frameStr = folderName + 'I_%s_%d_LowRes.jpg' % (datestr, captureFrameCount)
             frameHighResStr = folderName + 'I_%s_%d_HighRes.jpg' % (datestr, captureFrameCount)
 
-            saveThread = Thread(target=imageWriter.writeNewImage, args=(100,
+            saveThread = Thread(name="saveThread", target=imageWriter.writeNewImage, args=(100,
                                                                            procFrame,frameStr,
                                                                            frame,frameHighResStr))
             saveThread.daemon = True
