@@ -106,6 +106,7 @@ detector = simpleMotionDetector.SimpleMotionDetector(debug=False, thresh_diff=10
 
 # create image writer
 writer = imageWriter.imageWriter(quality=100)
+writer.start()
 
 # created a *threaded *video stream, allow the camera sensor to warmup,
 # and start the FPS counter
@@ -121,12 +122,12 @@ webThread.start()
 
 # Start Gallary Updater
 galleryThread = multiprocessing.Process(target=imageGallaryTask, args=())
-galleryThread.daemon=True
+galleryThread.daemon = True
 galleryThread.start()
 
 # Start Main Loop
 frameCount = 0
-startTime=time.time()
+startTime = time.time()
 captureFrameCount = 0
 # grab frames from threaded cam process
 while 1 == 1:
@@ -181,5 +182,6 @@ while 1 == 1:
 # do a bit of cleanup
 cv2.destroyAllWindows()
 vs.stop()
+writer.stop()
 
 
