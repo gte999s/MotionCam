@@ -2,6 +2,7 @@ import sys
 from threading import Thread
 sys.path.append('/usr/local/lib/python2.7/site-packages')
 import cv2
+import time
 
 
 
@@ -13,28 +14,24 @@ class imageWriter:
         self.frameStr = None
         self.frameHighRes = None
         self.frameHighResStr = None
-        self.isRunning = False
-        self.stopped = False
+        self.thread = Thread(target=self.update, args=())
+        self.thread.daemon = True
 
     def start(self):
-        # start the thread to poll for new images to write
-        Thread(target=self.update, args=()).start()
+        # start the thread to poll for new images to write        
+        self.thread.start()
         return self
+        
+    def isRunning(self):
+        return self.thread.isAlive();
 
     def update(self):
-        # Continuous loop checking for new files to be loaded to SD card
-        while True:
+        # Load images to SD Card
+        cv2.imwrite(self.frameStr, self.frame,
+                    [cv2.IMWRITE_JPEG_QUALITY, self.quality])
+        cv2.imwrite(self.frameHighResStr, self.frameHighRes,
+                    [cv2.IMWRITE_JPEG_QUALITY, self.quality])
 
-            if self.isRunning:
-                print "[INFO] writing new image to JPG ", self.frameStr
-                cv2.imwrite(self.frameStr, self.frame,
-                            [cv2.IMWRITE_JPEG_QUALITY, self.quality])
-                cv2.imwrite(self.frameHighResStr, self.frameHighRes,
-                            [cv2.IMWRITE_JPEG_QUALITY, self.quality])
-                self.isRunning = False
-
-            if self.stopped:
-                return
 
     def writeNewImage(self, frame = None, frameStr = None, frameHighRes = None, frameHighResStr = None):
         # Load new images to be written to SD CARD and toggle isRunning semaphore
@@ -44,8 +41,6 @@ class imageWriter:
         self.frameHighRes = frameHighRes
         self.frameHighResStr = frameHighResStr
 
-        self.isRunning = True
+        self.start()
 
-    def stop(self):
-        # set flag to kill update thread
-        self.stopped = True
+

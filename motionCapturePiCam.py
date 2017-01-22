@@ -106,7 +106,7 @@ detector = simpleMotionDetector.SimpleMotionDetector(debug=False, thresh_diff=10
 
 # create image writer
 writer = imageWriter.imageWriter(quality=100)
-writer.start()
+print("writer thread is active: %d" % writer.isRunning())
 
 # created a *threaded *video stream, allow the camera sensor to warmup,
 # and start the FPS counter
@@ -151,8 +151,10 @@ while 1 == 1:
     frameText = "Frame Count: % 6d FPS: %2.1f       %s" % (captureFrameCount , fps, datestr)
     font = cv2.FONT_HERSHEY_SIMPLEX
     cv2.putText(procFrame, frameText, (10, 20), font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
-
-    if (isMotion or captureFrameCount == 0) and writer.isRunning is False:
+    
+      
+    
+    if (isMotion or captureFrameCount == 0) and writer.isRunning() is False:
         sun = city.sun(date=datetime.datetime.now(), local=True)
         tzinfo = sun['dusk'].tzinfo
         
@@ -174,6 +176,7 @@ while 1 == 1:
             writer.writeNewImage(frameStr=folderName + 'I_%s_%d_LowRes.jpg' % (datestr, captureFrameCount), frame=procFrame,
                                  frameHighResStr=folderName + 'I_%s_%d_HighRes.jpg' % (datestr, captureFrameCount), frameHighRes=frame)
 
+    print("Writer thread is active: %d" % writer.isRunning())          
     # Display to screen
     cv2.imshow("Frame", procFrame)
     if cv2.waitKey(1) == ord('q'):
@@ -182,6 +185,6 @@ while 1 == 1:
 # do a bit of cleanup
 cv2.destroyAllWindows()
 vs.stop()
-writer.stop()
+
 
 
