@@ -15,6 +15,7 @@ from threading import Thread
 import multiprocessing
 import time
 import simpleMotionDetector
+import imageWriter
 import datetime
 
 sys.path.append('/usr/local/lib/python2.7/site-packages')
@@ -92,16 +93,19 @@ class PiVideoStream:
     def stop(self):
         # indicate that the thread should be stopped
         self.stopped = True
-        print "stopping frame capture proccess"
+        print "stopping frame capture process"
 
 # Create sunrise/sunset dictionary for city
 astral = Astral()
-astral.solar_depression='civil'
+astral.solar_depression = 'civil'
 city = astral['raleigh']
 
 # create detector
 print("[INFO] creating simple detector object")
 detector = simpleMotionDetector.SimpleMotionDetector(debug=False, thresh_diff=10, avg_ratio=.3, min_contour_size=500)
+
+# create image writer
+writer = imageWriter.imageWriter(quality=100)
 
 # created a *threaded *video stream, allow the camera sensor to warmup,
 # and start the FPS counter
@@ -111,19 +115,19 @@ vs.start()
 time.sleep(4.0)
 
 # Start webserver
-webThread=multiprocessing.Process(target=webserverTask,args=())
+webThread = multiprocessing.Process(target=webserverTask, args=())
 webThread.daemon = True
 webThread.start()
 
 # Start Gallary Updater
-galleryThread=multiprocessing.Process(target=imageGallaryTask,args=())
+galleryThread = multiprocessing.Process(target=imageGallaryTask, args=())
 galleryThread.daemon=True
 galleryThread.start()
 
 # Start Main Loop
 frameCount = 0
 startTime=time.time()
-captureFrameCount=0;
+captureFrameCount = 0
 # grab frames from threaded cam process
 while 1 == 1:
     frameCount += 1
@@ -145,10 +149,10 @@ while 1 == 1:
     fps = frameCount / (time.time() - startTime)
     frameText = "Frame Count: % 6d FPS: %2.1f       %s" % (captureFrameCount , fps, datestr)
     font = cv2.FONT_HERSHEY_SIMPLEX
-    cv2.putText(procFrame,frameText,(10,20), font, 0.5, (255,255,255),1,cv2.LINE_AA)
+    cv2.putText(procFrame, frameText, (10, 20), font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
-    if isMotion or captureFrameCount == 0:
-        sun=city.sun(date=datetime.datetime.now(),local=True)
+    if (isMotion or captureFrameCount == 0) and writer.isRunning is False:
+        sun = city.sun(date=datetime.datetime.now(), local=True)
         tzinfo = sun['dusk'].tzinfo
         
         if sun['dawn'] < datetime.datetime.now(tzinfo) < sun['dusk']:        
@@ -166,10 +170,8 @@ while 1 == 1:
             captureFrameCount += 1        
     
             # Finally make some JPEGs
-            cv2.imwrite(folderName + 'I_%s_%d_HighRes.jpg' % (datestr, captureFrameCount), frame,
-                        [cv2.IMWRITE_JPEG_QUALITY, 100])
-            cv2.imwrite(folderName + 'I_%s_%d_LowRes.jpg' % (datestr, captureFrameCount), procFrame,
-                        [cv2.IMWRITE_JPEG_QUALITY, 100])
+            writer.writeNewImage(frameStr=folderName + 'I_%s_%d_LowRes.jpg' % (datestr, captureFrameCount), frame=procFrame,
+                                 frameHighResStr=folderName + 'I_%s_%d_HighRes.jpg' % (datestr, captureFrameCount), frameHighRes=frame)
 
     # Display to screen
     cv2.imshow("Frame", procFrame)
