@@ -23,9 +23,10 @@ class GMMMotionDetector:
 
         # Run Gaussian Mixture Model Background Subtractor
         fg = self.gmmSubtractor.apply(frame)
+        thresh = cv2.threshold(fg, 200, 255, cv2.THRESH_BINARY)[1]
 
         # find contours using the threshold image
-        contours = cv2.findContours(fg.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[1]
+        contours = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[1]
 
         isMotion = False
         for c in contours:
@@ -43,5 +44,6 @@ class GMMMotionDetector:
         if self.debug:
             cv2.imshow("Frame", frame)
             cv2.imshow("FG", fg)
+            cv2.imshow("Tresh", thresh)
 
         return isMotion, frame
