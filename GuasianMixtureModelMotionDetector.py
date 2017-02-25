@@ -16,13 +16,13 @@ class GMMMotionDetector:
 
     def procFrame(self, frame):
         # Convert to Greyscale
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         # Blur a lot to get rid of noise
         # gray = cv2.GaussianBlur(gray, (13, 13), 0)
 
         # Run Gaussian Mixture Model Background Subtractor
-        fg = self.gmmSubtractor.apply(gray)
+        fg = self.gmmSubtractor.apply(frame)
 
         # find contours using the threshold image
         contours = cv2.findContours(fg.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[1]
