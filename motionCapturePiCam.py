@@ -15,6 +15,7 @@ from threading import Thread
 import multiprocessing
 import time
 import simpleMotionDetector
+import GuasianMixtureModelMotionDetector
 import imageWriter
 import datetime
 
@@ -101,8 +102,9 @@ astral.solar_depression = 'civil'
 city = astral['raleigh']
 
 # create detector
-print("[INFO] creating simple detector object")
-detector = simpleMotionDetector.SimpleMotionDetector(debug=False, thresh_diff=10, avg_ratio=.3, min_contour_size=500)
+print("[INFO] creating GMM detector object")
+detector = GuasianMixtureModelMotionDetector.GMMMotionDetector(debug=True)
+# detector = simpleMotionDetector.SimpleMotionDetector(debug=False, thresh_diff=10, avg_ratio=.3, min_contour_size=500)
 
 # created a *threaded *video stream, allow the camera sensor to warmup,
 # and start the FPS counter
