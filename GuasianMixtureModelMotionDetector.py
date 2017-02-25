@@ -5,12 +5,13 @@ import numpy
 
 class GMMMotionDetector:
 
-    def __init__(self,thresh_diff=10, min_contour_size=1000, history=30, blur=(13, 13), debug=False):
+    def __init__(self,thresh_diff=10, min_contour_size=1000, history=30, detectShadows= False, blur=(13, 13), debug=False):
         self.thresh_diff=thresh_diff
         self.min_contour_size=min_contour_size
         self.history = history
         self.blur = blur
-        self.gmmSubtractor = cv2.createBackgroundSubtractorMOG2(history=self.history)
+        self.detectShadows = False
+        self.gmmSubtractor = cv2.createBackgroundSubtractorMOG2(history=self.history, detectShadows= self.detectShadows)
         self.debug = debug
 
     def procFrame(self, frame):
