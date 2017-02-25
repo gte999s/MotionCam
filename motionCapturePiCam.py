@@ -103,7 +103,7 @@ city = astral['raleigh']
 
 # create detector
 print("[INFO] creating GMM detector object")
-detector = GuasianMixtureModelMotionDetector.GMMMotionDetector(debug=True, history=10)
+detector = GuasianMixtureModelMotionDetector.GMMMotionDetector(debug=True, history=100)
 # detector = simpleMotionDetector.SimpleMotionDetector(debug=False, thresh_diff=10, avg_ratio=.3, min_contour_size=500)
 
 # created a *threaded *video stream, allow the camera sensor to warmup,
