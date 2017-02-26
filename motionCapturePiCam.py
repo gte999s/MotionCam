@@ -147,10 +147,11 @@ while 1 == 1:
 
     # Create some text for the screen
     fps = frameCount / (time.time() - startTime)
-    frameText = "Frame Count: % 6d FPS: %2.1f       %s\n Total Frames: %d" % (captureFrameCount , fps, datestr,
-                                                                              frameCount)
+    frameText = "Frame Count: % 6d FPS: %2.1f       %s" % (captureFrameCount , fps, datestr)
     font = cv2.FONT_HERSHEY_SIMPLEX
     cv2.putText(procFrame, frameText, (10, 20), font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+    frameText = 'Total Frames: %d' % (frameCount)
+    cv2.putText(procFrame, frameText, (10, 30), font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
     if saveThread is not None:
         if not saveThread.is_alive():
